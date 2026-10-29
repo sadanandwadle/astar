@@ -1,66 +1,78 @@
 import heapq
 
-start = (1, 2, 3, 4, 0, 6, 7, 5, 8)
-goal = (1, 2, 3, 4, 5, 6, 7, 8, 0)
+start = (1, 2, 3,
+         4, 0, 6,
+         7, 5, 8)
+
+goal = (1, 2, 3,
+        4, 5, 6,
+        7, 8, 0)
+
 
 def heuristic(state):
-    distance = 0
+    h = 0
 
     for i in range(9):
         if state[i] != 0:
-            target = goal.index(state[i])
-            distance += abs(i // 3 - target // 3)
-            distance += abs(i % 3 - target % 3)
+            j = goal.index(state[i])
+            h += abs(i // 3 - j // 3)
+            h += abs(i % 3 - j % 3)
 
-    return distance
+    return h
 
-queue = [(0, start)]
-cost = {start: 0}
-parent = {start: None}
 
-while queue:
-    f, current = heapq.heappop(queue)
+def astar(start):
+    queue = [(heuristic(start), 0, start)]
+    visited = set()
+    parent = {start: None}
 
-    if current == goal:
-        break
+    while queue:
+        f, g, state = heapq.heappop(queue)
 
-    for i in range(9):
-        if current[i] == 0:
-            break
-
-    for move in [-3, 3, -1, 1]:
-        j = i + move
-
-        if j < 0 or j >= 9:
+        if state in visited:
             continue
 
-        if abs(i % 3 - j % 3) > 1:
-            continue
+        visited.add(state)
 
-        new = list(current)
-        new[i], new[j] = new[j], new[i]
-        new = tuple(new)
+        if state == goal:
+            path = []
+            while state is not None:
+                path.append(state)
+                state = parent[state]
 
-        new_cost = cost[current] + 1
+            for state in reversed(path):
+                print(state[:3])
+                print(state[3:6])
+                print(state[6:9])
+                print()
+            return
 
-        if new not in cost or new_cost < cost[new]:
-            cost[new] = new_cost
-            parent[new] = current
-            heapq.heappush(
-                queue,
-                (new_cost + heuristic(new), new)
-            )
+        zero = state.index(0)
 
-path = []
-state = goal
+        for move in [-3, 3, -1, 1]:
+            new_pos = zero + move
 
-while state is not None:
-    path.append(state)
-    state = parent.get(state)
+            if not 0 <= new_pos < 9:
+                continue
 
-path.reverse()
+            if move == -1 and zero % 3 == 0:
+                continue
 
-for state in path:
-    for i in range(0, 9, 3):
-        print(state[i:i+3])
-    print()
+            if move == 1 and zero % 3 == 2:
+                continue
+
+            new_state = list(state)
+            new_state[zero], new_state[new_pos] = \
+                new_state[new_pos], new_state[zero]
+
+            new_state = tuple(new_state)
+
+            if new_state not in visited:
+                parent[new_state] = state
+                heapq.heappush(
+                    queue,
+                    (g + 1 + heuristic(new_state), g + 1, new_state)
+                )
+
+
+astar(start)
